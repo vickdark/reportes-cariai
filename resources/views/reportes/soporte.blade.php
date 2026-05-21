@@ -7,93 +7,12 @@
         <title>Reporte de Ventas</title>
 
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-        <style>
-            .gridjs-container { width: 100%; }
-            .gridjs-wrapper { overflow-x: hidden !important; }
-            .gridjs-table { width: 100% !important; table-layout: fixed; }
-            .gridjs-td, .gridjs-th { vertical-align: middle; }
-        </style>
-
         <link rel="stylesheet" href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css">
-        <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js" defer></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
     </head>
 
     <body class="bg-light text-dark">
         <div class="container py-4">
-            @php
-                $statusLabels = [
-                    'paid' => 'Pagada',
-                    'pending' => 'Pendiente',
-                    'cancelled' => 'Cancelada',
-                ];
-
-                $channelLabels = [
-                    'web' => 'Web',
-                    'api' => 'API',
-                    'phone' => 'Teléfono',
-                    'email' => 'Correo',
-                    'whatsapp' => 'WhatsApp',
-                ];
-
-                $countryLabels = [
-                    'CO' => 'Colombia',
-                    'MX' => 'México',
-                    'CL' => 'Chile',
-                    'AR' => 'Argentina',
-                    'PE' => 'Perú',
-                ];
-
-                $segmentLabels = [
-                    'SMB' => 'Pyme',
-                    'Mid-Market' => 'Mediana',
-                    'Enterprise' => 'Enterprise',
-                ];
-
-                $formatMoney = fn (int $cents) => 'COP $ '.number_format((int) round($cents / 100), 0, ',', '.');
-
-                $deltaMeta = function (?float $pct): array {
-                    if ($pct === null) {
-                        return ['text' => 'N/A', 'cls' => 'text-body-secondary', 'icon' => null];
-                    }
-
-                    $text = ($pct >= 0 ? '+' : '').number_format($pct, 1, ',', '.').'%';
-                    $cls = $pct >= 0 ? 'text-success' : 'text-danger';
-                    $icon = $pct >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
-
-                    return ['text' => $text, 'cls' => $cls, 'icon' => $icon];
-                };
-
-                $statusLabel = $status !== '' ? ($statusLabels[$status] ?? $status) : null;
-                $channelLabel = ($channel ?? '') !== '' ? ($channelLabels[$channel] ?? $channel) : null;
-                $countryLabel = ($country ?? '') !== '' ? ($countryLabels[$country] ?? $country) : null;
-                $segmentLabel = ($segment ?? '') !== '' ? ($segmentLabels[$segment] ?? $segment) : null;
-
-                $paidRevenueCents = (int) ($kpis['paid_revenue_cents'] ?? 0);
-                $paidOrders = (int) ($kpis['paid_orders'] ?? 0);
-                $avgOrderCents = (int) ($kpis['avg_order_cents'] ?? 0);
-                $uniqueCustomers = (int) ($kpis['unique_customers'] ?? 0);
-
-                $paidRevenueDelta = $deltaMeta($kpis['paid_revenue_change_pct'] ?? null);
-                $paidOrdersDelta = $deltaMeta($kpis['paid_orders_change_pct'] ?? null);
-                $avgOrderDelta = $deltaMeta($kpis['avg_order_change_pct'] ?? null);
-                $uniqueCustomersDelta = $deltaMeta($kpis['unique_customers_change_pct'] ?? null);
-
-                $pendingOrders = (int) ($kpis['pending_orders'] ?? 0);
-                $cancelledOrders = (int) ($kpis['cancelled_orders'] ?? 0);
-
-                $pendingOld = (int) ($kpis['pending_old_count'] ?? 0);
-                $pendingDays = (int) ($kpis['pending_threshold_days'] ?? 0);
-                $cancelAlert = (bool) ($kpis['cancel_alert'] ?? false);
-                $cancelRate = (float) ($kpis['cancel_rate'] ?? 0);
-                $cancelRatePct = number_format($cancelRate * 100, 1, ',', '.');
-
-                $updatedAt = now()->setTimezone('America/Bogota');
-                $updatedMeridiem = $updatedAt->format('A') === 'AM' ? 'a. m.' : 'p. m.';
-                $updatedAtLabel = $updatedAt->format('d/m/Y h:i').' '.$updatedMeridiem.' (COT)';
-            @endphp
 
             <div class="mb-4">
                 <div class="d-flex flex-wrap gap-2 align-items-baseline justify-content-between">
@@ -151,18 +70,18 @@
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-3">
                     <div class="card border-0 shadow-sm bg-success-subtle">
-                        <div class="card-body d-flex align-items-start justify-content-between gap-3">
-                            <div>
-                            <div class="text-body-secondary small">Ingresos pagados</div>
-                            <div class="h4 mb-0">
-                                {{ $formatMoney($paidRevenueCents) }}
+                        <div class="card-body kpi-card">
+                            <div class="kpi-card-content">
+                                <div class="kpi-card-label">Ingresos pagados</div>
+                                <div class="kpi-card-value">{{ $formatMoney($paidRevenueCents) }}</div>
+                                <div class="kpi-card-delta {{ $paidRevenueDelta['cls'] }}">
+                                    @if ($paidRevenueDelta['icon'] !== null)
+                                        <i class="fa-solid {{ $paidRevenueDelta['icon'] }} me-1"></i>
+                                    @endif
+                                    {{ $paidRevenueDelta['text'] }} vs período anterior
+                                </div>
                             </div>
-                            <div class="small {{ $paidRevenueDelta['cls'] }}">
-                                @if ($paidRevenueDelta['icon'] !== null) <i class="fa-solid {{ $paidRevenueDelta['icon'] }} me-1"></i>@endif
-                                {{ $paidRevenueDelta['text'] }} vs período anterior
-                            </div>
-                            </div>
-                            <div class="text-success fs-3">
+                            <div class="text-success kpi-card-icon">
                                 <i class="fa-solid fa-sack-dollar"></i>
                             </div>
                         </div>
@@ -170,16 +89,18 @@
                 </div>
                 <div class="col-12 col-md-3">
                     <div class="card border-0 shadow-sm bg-primary-subtle">
-                        <div class="card-body d-flex align-items-start justify-content-between gap-3">
-                            <div>
-                            <div class="text-body-secondary small">Órdenes pagadas</div>
-                            <div class="h4 mb-0">{{ $paidOrders }}</div>
-                            <div class="small {{ $paidOrdersDelta['cls'] }}">
-                                @if ($paidOrdersDelta['icon'] !== null) <i class="fa-solid {{ $paidOrdersDelta['icon'] }} me-1"></i>@endif
-                                {{ $paidOrdersDelta['text'] }} vs período anterior
+                        <div class="card-body kpi-card">
+                            <div class="kpi-card-content">
+                                <div class="kpi-card-label">Órdenes pagadas</div>
+                                <div class="kpi-card-value">{{ $paidOrders }}</div>
+                                <div class="kpi-card-delta {{ $paidOrdersDelta['cls'] }}">
+                                    @if ($paidOrdersDelta['icon'] !== null)
+                                        <i class="fa-solid {{ $paidOrdersDelta['icon'] }} me-1"></i>
+                                    @endif
+                                    {{ $paidOrdersDelta['text'] }} vs período anterior
+                                </div>
                             </div>
-                            </div>
-                            <div class="text-primary fs-3">
+                            <div class="text-primary kpi-card-icon">
                                 <i class="fa-solid fa-receipt"></i>
                             </div>
                         </div>
@@ -187,18 +108,18 @@
                 </div>
                 <div class="col-12 col-md-3">
                     <div class="card border-0 shadow-sm bg-info-subtle">
-                        <div class="card-body d-flex align-items-start justify-content-between gap-3">
-                            <div>
-                            <div class="text-body-secondary small">Ticket promedio</div>
-                            <div class="h4 mb-0">
-                                {{ $formatMoney($avgOrderCents) }}
+                        <div class="card-body kpi-card">
+                            <div class="kpi-card-content">
+                                <div class="kpi-card-label">Ticket promedio</div>
+                                <div class="kpi-card-value">{{ $formatMoney($avgOrderCents) }}</div>
+                                <div class="kpi-card-delta {{ $avgOrderDelta['cls'] }}">
+                                    @if ($avgOrderDelta['icon'] !== null)
+                                        <i class="fa-solid {{ $avgOrderDelta['icon'] }} me-1"></i>
+                                    @endif
+                                    {{ $avgOrderDelta['text'] }} vs período anterior
+                                </div>
                             </div>
-                            <div class="small {{ $avgOrderDelta['cls'] }}">
-                                @if ($avgOrderDelta['icon'] !== null) <i class="fa-solid {{ $avgOrderDelta['icon'] }} me-1"></i>@endif
-                                {{ $avgOrderDelta['text'] }} vs período anterior
-                            </div>
-                            </div>
-                            <div class="text-info fs-3">
+                            <div class="text-info kpi-card-icon">
                                 <i class="fa-solid fa-chart-simple"></i>
                             </div>
                         </div>
@@ -206,16 +127,18 @@
                 </div>
                 <div class="col-12 col-md-3">
                     <div class="card border-0 shadow-sm bg-warning-subtle">
-                        <div class="card-body d-flex align-items-start justify-content-between gap-3">
-                            <div>
-                            <div class="text-body-secondary small">Clientes únicos</div>
-                            <div class="h4 mb-0">{{ $uniqueCustomers }}</div>
-                            <div class="small {{ $uniqueCustomersDelta['cls'] }}">
-                                @if ($uniqueCustomersDelta['icon'] !== null) <i class="fa-solid {{ $uniqueCustomersDelta['icon'] }} me-1"></i>@endif
-                                {{ $uniqueCustomersDelta['text'] }} vs período anterior
+                        <div class="card-body kpi-card">
+                            <div class="kpi-card-content">
+                                <div class="kpi-card-label">Clientes únicos</div>
+                                <div class="kpi-card-value">{{ $uniqueCustomers }}</div>
+                                <div class="kpi-card-delta {{ $uniqueCustomersDelta['cls'] }}">
+                                    @if ($uniqueCustomersDelta['icon'] !== null)
+                                        <i class="fa-solid {{ $uniqueCustomersDelta['icon'] }} me-1"></i>
+                                    @endif
+                                    {{ $uniqueCustomersDelta['text'] }} vs período anterior
+                                </div>
                             </div>
-                            </div>
-                            <div class="text-warning fs-3">
+                            <div class="text-warning kpi-card-icon">
                                 <i class="fa-solid fa-users"></i>
                             </div>
                         </div>
@@ -224,13 +147,13 @@
 
                 <div class="col-12 col-md-6">
                     <div class="card border-0 shadow-sm bg-secondary-subtle">
-                        <div class="card-body d-flex align-items-start justify-content-between gap-3">
-                            <div>
-                            <div class="text-body-secondary small">Órdenes pendientes</div>
-                            <div class="h4 mb-1">{{ $pendingOrders }}</div>
-                            <div class="text-body-secondary small">Requieren seguimiento</div>
+                        <div class="card-body kpi-card">
+                            <div class="kpi-card-content">
+                                <div class="kpi-card-label">Órdenes pendientes</div>
+                                <div class="kpi-card-value">{{ $pendingOrders }}</div>
+                                <div class="text-body-secondary small">Requieren seguimiento</div>
                             </div>
-                            <div class="text-secondary fs-3">
+                            <div class="text-secondary kpi-card-icon">
                                 <i class="fa-solid fa-clock"></i>
                             </div>
                         </div>
@@ -239,13 +162,13 @@
 
                 <div class="col-12 col-md-6">
                     <div class="card border-0 shadow-sm bg-danger-subtle">
-                        <div class="card-body d-flex align-items-start justify-content-between gap-3">
-                            <div>
-                            <div class="text-body-secondary small">Órdenes canceladas</div>
-                            <div class="h4 mb-1">{{ $cancelledOrders }}</div>
-                            <div class="text-body-secondary small">Se excluyen de ingresos</div>
+                        <div class="card-body kpi-card">
+                            <div class="kpi-card-content">
+                                <div class="kpi-card-label">Órdenes canceladas</div>
+                                <div class="kpi-card-value">{{ $cancelledOrders }}</div>
+                                <div class="text-body-secondary small">Se excluyen de ingresos</div>
                             </div>
-                            <div class="text-danger fs-3">
+                            <div class="text-danger kpi-card-icon">
                                 <i class="fa-solid fa-ban"></i>
                             </div>
                         </div>
@@ -255,9 +178,9 @@
 
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
-                    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
+                    <div class="filters-header">
                         <div class="fw-semibold">Filtros</div>
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="filters-buttons">
                             <a class="btn btn-outline-secondary btn-sm" href="{{ route('reportes.ventas') }}">
                                 <i class="fa-solid fa-rotate-left me-1"></i>Restablecer
                             </a>
@@ -342,8 +265,8 @@
                 <div class="col-12 col-lg-4">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <h2 class="h6 mb-2">Mix por país</h2>
-                            <div class="text-body-secondary small mb-3">Distribución de ingresos pagados (COP)</div>
+                            <h2 class="chart-title">Mix por país</h2>
+                            <div class="chart-description">Distribución de ingresos pagados (COP)</div>
                             <canvas id="countryMixChart" height="220"></canvas>
                         </div>
                     </div>
@@ -352,8 +275,8 @@
                 <div class="col-12 col-lg-4">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <h2 class="h6 mb-2">Top 5 canales</h2>
-                            <div class="text-body-secondary small mb-3">Por ingresos pagados (COP)</div>
+                            <h2 class="chart-title">Top 5 canales</h2>
+                            <div class="chart-description">Por ingresos pagados (COP)</div>
                             <div class="list-group list-group-flush">
                                 @forelse (($topChannels ?? []) as $r)
                                     <div class="list-group-item px-0 d-flex align-items-center justify-content-between">
@@ -376,8 +299,8 @@
                 <div class="col-12 col-lg-4">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <h2 class="h6 mb-2">Top 5 clientes</h2>
-                            <div class="text-body-secondary small mb-3">Por ingresos pagados (COP)</div>
+                            <h2 class="chart-title">Top 5 clientes</h2>
+                            <div class="chart-description">Por ingresos pagados (COP)</div>
                             <div class="list-group list-group-flush">
                                 @forelse (($topCustomers ?? []) as $r)
                                     <div class="list-group-item px-0 d-flex align-items-center justify-content-between">
@@ -401,7 +324,7 @@
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
                     <h2 class="h6 mb-2">Alertas</h2>
-                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <div class="alerts-container">
                         <span class="badge {{ $pendingOld > 0 ? 'text-bg-danger' : 'text-bg-success' }}">
                             Pendientes &gt; {{ $pendingDays }} días: {{ $pendingOld }}
                         </span>
@@ -437,210 +360,21 @@
             </div>
         </div>
 
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+        <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+        
         <script>
-            window.addEventListener('DOMContentLoaded', () => {
-                const cop = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
-                const statusLabels = { paid: 'Pagada', pending: 'Pendiente', cancelled: 'Cancelada' };
-                const channelLabels = { web: 'Web', api: 'API', phone: 'Teléfono', email: 'Correo', whatsapp: 'WhatsApp' };
-                const mixCountryLabels = @json($mixCountryLabels ?? []);
-                const mixCountryRevenue = @json($mixCountryRevenue ?? []);
-                const baseParams = @json(request()->query());
-
-                const dataBaseUrl = new URL(@json(route('reportes.ventas.data')), window.location.origin);
-                const gridContainer = document.getElementById('grid');
-                const pageSizeSelect = document.getElementById('pageSize');
-
-                let currentSearch = '';
-                let currentSort = null;
-
-                const buildUrl = (extra) => {
-                    const u = new URL(dataBaseUrl.toString());
-                    const params = { ...baseParams, ...extra };
-
-                    Object.entries(params).forEach(([k, v]) => {
-                        if (v === null || v === undefined) return;
-                        if (typeof v === 'string' && v.trim() === '') return;
-                        u.searchParams.set(k, String(v));
-                    });
-
-                    return u.toString();
-                };
-
-                const renderGrid = (pageSize) => {
-                    gridContainer.innerHTML = '';
-                    currentSearch = '';
-                    currentSort = null;
-
-                    new gridjs.Grid({
-                        columns: [
-                            { name: 'ID', sort: true, width: '80px' },
-                            {
-                                name: 'Cliente',
-                                sort: true,
-                                width: '260px',
-                                formatter: (cell) => {
-                                    const v = String(cell || '');
-                                    const safe = v.replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-                                    return gridjs.html(`<div class="text-truncate" title="${safe}">${safe}</div>`);
-                                }
-                            },
-                            {
-                                name: 'Estado',
-                                sort: true,
-                                width: '120px',
-                                formatter: (cell) => {
-                                    const v = String(cell || '');
-                                    const cls = v === 'paid' ? 'text-bg-success' : (v === 'pending' ? 'text-bg-warning' : 'text-bg-danger');
-                                    const label = statusLabels[v] || v;
-                                    return gridjs.html(`<span class="badge ${cls}">${label}</span>`);
-                                }
-                            },
-                            {
-                                name: 'Canal',
-                                sort: true,
-                                width: '150px',
-                                formatter: (cell) => {
-                                    const v = String(cell || '');
-                                    const icon = v === 'whatsapp'
-                                        ? 'fa-brands fa-whatsapp'
-                                        : (v === 'email' ? 'fa-regular fa-envelope' : (v === 'phone' ? 'fa-solid fa-phone' : (v === 'api' ? 'fa-solid fa-code' : 'fa-solid fa-globe')));
-                                    const label = channelLabels[v] || v;
-                                    return gridjs.html(`<span class="d-inline-flex align-items-center gap-2"><i class="${icon}"></i><span>${label}</span></span>`);
-                                }
-                            },
-                            { name: 'Fecha', sort: true, width: '190px' },
-                            { name: 'Ítems', sort: true, width: '90px' },
-                            { name: 'Unidades', sort: true, width: '110px' },
-                            {
-                                name: 'Total',
-                                sort: true,
-                                width: '170px',
-                                formatter: (cell) => cop.format(Number(cell || 0)),
-                            }
-                        ],
-                        server: {
-                            url: buildUrl({ page: 1, limit: pageSize }),
-                            then: (res) => res.data,
-                            total: (res) => res.total,
-                        },
-                        search: {
-                            enabled: true,
-                            placeholder: 'Buscar en la tabla…',
-                            server: {
-                                url: (prev, keyword) => {
-                                    currentSearch = String(keyword || '');
-                                    const extra = { page: 1, limit: pageSize };
-                                    if (currentSort) {
-                                        extra.sort = currentSort.sort;
-                                        extra.dir = currentSort.dir;
-                                    }
-                                    if (currentSearch.trim() !== '') {
-                                        extra.search = currentSearch.trim();
-                                    }
-                                    return buildUrl(extra);
-                                }
-                            }
-                        },
-                        sort: {
-                            server: {
-                                url: (prev, columns) => {
-                                    const c = (columns || [])[0];
-                                    if (!c) {
-                                        currentSort = null;
-                                    } else {
-                                        currentSort = { sort: c.index, dir: c.direction === 1 ? 'asc' : 'desc' };
-                                    }
-
-                                    const extra = { page: 1, limit: pageSize };
-                                    if (currentSort) {
-                                        extra.sort = currentSort.sort;
-                                        extra.dir = currentSort.dir;
-                                    }
-                                    if (currentSearch.trim() !== '') {
-                                        extra.search = currentSearch.trim();
-                                    }
-                                    return buildUrl(extra);
-                                }
-                            }
-                        },
-                        pagination: {
-                            enabled: true,
-                            limit: pageSize,
-                            summary: true,
-                            server: {
-                                url: (prev, page, limit) => {
-                                    const extra = { page: page + 1, limit };
-                                    if (currentSort) {
-                                        extra.sort = currentSort.sort;
-                                        extra.dir = currentSort.dir;
-                                    }
-                                    if (currentSearch.trim() !== '') {
-                                        extra.search = currentSearch.trim();
-                                    }
-                                    return buildUrl(extra);
-                                }
-                            }
-                        },
-                        fixedHeader: true,
-                        height: '520px'
-                    }).render(gridContainer);
-                };
-
-                pageSizeSelect.addEventListener('change', () => {
-                    renderGrid(Number(pageSizeSelect.value) || 25);
-                });
-
-                renderGrid(Number(pageSizeSelect.value) || 25);
-
-                const labels = @json($chartLabels);
-                const paidOrders = @json($chartPaidOrders);
-                const paidRevenue = @json($chartPaidRevenue);
-
-                const ctx = document.getElementById('chart');
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels,
-                        datasets: [
-                            { label: 'Ingresos (COP)', data: paidRevenue, borderWidth: 2, tension: 0.2, yAxisID: 'y' },
-                            { label: 'Órdenes pagadas', data: paidOrders, borderWidth: 2, tension: 0.2, yAxisID: 'y1' },
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { callback: (v) => cop.format(v) } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 } }
-                        }
-                    }
-                });
-
-                const mixCtx = document.getElementById('countryMixChart');
-                new Chart(mixCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: mixCountryLabels,
-                        datasets: [
-                            {
-                                label: 'Ingresos (COP)',
-                                data: mixCountryRevenue,
-                                borderWidth: 1,
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => `${ctx.label}: ${cop.format(ctx.parsed)}`
-                                }
-                            }
-                        }
-                    }
-                });
-            });
+            // Pasar datos al módulo JavaScript
+            window.mixCountryLabels = @json($mixCountryLabels ?? []);
+            window.mixCountryRevenue = @json($mixCountryRevenue ?? []);
+            window.baseParams = @json(request()->query());
+            window.dataBaseUrl = @json(route('reportes.ventas.data'));
+            window.chartLabels = @json($chartLabels);
+            window.chartPaidOrders = @json($chartPaidOrders);
+            window.chartPaidRevenue = @json($chartPaidRevenue);
         </script>
+        
+        @vite(['resources/js/soporte-report.js'])
     </body>
 </html>

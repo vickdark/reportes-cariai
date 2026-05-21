@@ -176,7 +176,70 @@ class SoporteReportController extends Controller
         $cancelRate = $total > 0 ? ($cancelled / $total) : 0.0;
         $cancelRateThreshold = 0.25;
         $cancelAlert = $total > 0 && $cancelRate >= $cancelRateThreshold;
- 
+
+        // Helper functions
+        $formatMoney = fn (int $cents) => 'COP $ '.number_format((int) round($cents / 100), 0, ',', '.');
+
+        $deltaMeta = function (?float $pct): array {
+            if ($pct === null) {
+                return ['text' => 'N/A', 'cls' => 'text-body-secondary', 'icon' => null];
+            }
+
+            $text = ($pct >= 0 ? '+' : '').number_format($pct, 1, ',', '.').'%';
+            $cls = $pct >= 0 ? 'text-success' : 'text-danger';
+            $icon = $pct >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
+
+            return ['text' => $text, 'cls' => $cls, 'icon' => $icon];
+        };
+
+        // Labels
+        $statusLabels = [
+            'paid' => 'Pagada',
+            'pending' => 'Pendiente',
+            'cancelled' => 'Cancelada',
+        ];
+
+        $channelLabels = [
+            'web' => 'Web',
+            'api' => 'API',
+            'phone' => 'Teléfono',
+            'email' => 'Correo',
+            'whatsapp' => 'WhatsApp',
+        ];
+
+        $countryLabels = [
+            'CO' => 'Colombia',
+            'MX' => 'México',
+            'CL' => 'Chile',
+            'AR' => 'Argentina',
+            'PE' => 'Perú',
+        ];
+
+        $segmentLabels = [
+            'SMB' => 'Pyme',
+            'Mid-Market' => 'Mediana',
+            'Enterprise' => 'Enterprise',
+        ];
+
+        // Status labels
+        $statusLabel = $status !== '' ? ($statusLabels[$status] ?? $status) : null;
+        $channelLabel = ($channel ?? '') !== '' ? ($channelLabels[$channel] ?? $channel) : null;
+        $countryLabel = ($country ?? '') !== '' ? ($countryLabels[$country] ?? $country) : null;
+        $segmentLabel = ($segment ?? '') !== '' ? ($segmentLabels[$segment] ?? $segment) : null;
+
+        // Delta calculations
+        $paidRevenueDelta = $deltaMeta($pct($paidRevenueCents, $paidRevenuePrevCents));
+        $paidOrdersDelta = $deltaMeta($pct($paid, $paidPrev));
+        $avgOrderDelta = $deltaMeta($pct($avgOrderCents, $avgOrderPrevCents));
+        $uniqueCustomersDelta = $deltaMeta($pct($uniqueCustomers, $uniqueCustomersPrev));
+
+        // Formatted values
+        $cancelRatePct = number_format($cancelRate * 100, 1, ',', '.');
+
+        $updatedAt = now()->setTimezone('America/Bogota');
+        $updatedMeridiem = $updatedAt->format('A') === 'AM' ? 'a. m.' : 'p. m.';
+        $updatedAtLabel = $updatedAt->format('d/m/Y h:i').' '.$updatedMeridiem.' (COT)';
+
         return view('reportes.soporte', [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
@@ -186,6 +249,27 @@ class SoporteReportController extends Controller
             'channel' => $channel,
             'country' => $country,
             'segment' => $segment,
+            'statusLabel' => $statusLabel,
+            'channelLabel' => $channelLabel,
+            'countryLabel' => $countryLabel,
+            'segmentLabel' => $segmentLabel,
+            'channelLabels' => $channelLabels,
+            'formatMoney' => $formatMoney,
+            'paidRevenueCents' => $paidRevenueCents,
+            'paidOrders' => $paid,
+            'avgOrderCents' => $avgOrderCents,
+            'uniqueCustomers' => $uniqueCustomers,
+            'paidRevenueDelta' => $paidRevenueDelta,
+            'paidOrdersDelta' => $paidOrdersDelta,
+            'avgOrderDelta' => $avgOrderDelta,
+            'uniqueCustomersDelta' => $uniqueCustomersDelta,
+            'pendingOrders' => $pending,
+            'cancelledOrders' => $cancelled,
+            'pendingOld' => $pendingOldCount,
+            'pendingDays' => $pendingThresholdDays,
+            'cancelAlert' => $cancelAlert,
+            'cancelRatePct' => $cancelRatePct,
+            'updatedAtLabel' => $updatedAtLabel,
             'kpis' => [
                 'total_orders' => $total,
                 'paid_orders' => $paid,
