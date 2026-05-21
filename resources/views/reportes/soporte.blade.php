@@ -23,6 +23,22 @@
 
     <body class="bg-light text-dark">
         <div class="container py-4">
+            @php
+                $statusLabels = [
+                    'paid' => 'Pagada',
+                    'pending' => 'Pendiente',
+                    'cancelled' => 'Cancelada',
+                ];
+
+                $channelLabels = [
+                    'web' => 'Web',
+                    'api' => 'API',
+                    'phone' => 'Teléfono',
+                    'email' => 'Correo',
+                    'whatsapp' => 'WhatsApp',
+                ];
+            @endphp
+
             <div class="mb-4">
                 <div class="d-flex flex-wrap gap-2 align-items-baseline justify-content-between">
                     <div>
@@ -31,11 +47,11 @@
                             Rango: <span class="fw-semibold">{{ $from }}</span> a <span class="fw-semibold">{{ $to }}</span>
                             @if ($status !== '')
                                 <span class="mx-1">·</span>
-                                Estado: <span class="fw-semibold">{{ $status }}</span>
+                                Estado: <span class="fw-semibold">{{ $statusLabels[$status] ?? $status }}</span>
                             @endif
                             @if (($channel ?? '') !== '')
                                 <span class="mx-1">·</span>
-                                Canal: <span class="fw-semibold">{{ $channel }}</span>
+                                Canal: <span class="fw-semibold">{{ $channelLabels[$channel] ?? $channel }}</span>
                             @endif
                             <span class="mx-1">·</span>
                             Moneda: <span class="fw-semibold">COP</span>
@@ -43,7 +59,28 @@
                     </div>
 
                     <div class="text-body-secondary small">
-                        Actualizado: <span class="fw-semibold">{{ now()->toDateTimeString() }}</span>
+                        @php
+                            $updatedAt = now()->setTimezone('America/Bogota');
+                            $updatedMeridiem = $updatedAt->format('A') === 'AM' ? 'a. m.' : 'p. m.';
+                        @endphp
+                        Actualizado: <span class="fw-semibold">{{ $updatedAt->format('d/m/Y h:i') }} {{ $updatedMeridiem }} (COT)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="text-primary fs-4">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold mb-1">¿Para qué sirve este reporte?</div>
+                            <div class="text-body-secondary">
+                                Consolida el desempeño de ventas por rango de fechas, mostrando ingresos, volumen de órdenes, ticket promedio y clientes únicos.
+                                Ayuda a detectar tendencias diarias, identificar canales con mayor conversión y priorizar seguimiento de órdenes pendientes.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -141,9 +178,14 @@
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
                         <div class="fw-semibold">Filtros</div>
-                        <a class="btn btn-outline-secondary btn-sm" href="{{ route('reportes.ventas.export', request()->query()) }}">
-                            <i class="fa-solid fa-file-export me-1"></i>Exportar CSV
-                        </a>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-outline-secondary btn-sm" href="{{ route('reportes.ventas') }}">
+                                <i class="fa-solid fa-rotate-left me-1"></i>Restablecer
+                            </a>
+                            <a class="btn btn-outline-secondary btn-sm" href="{{ route('reportes.ventas.export', request()->query()) }}">
+                                <i class="fa-solid fa-file-export me-1"></i>Exportar CSV
+                            </a>
+                        </div>
                     </div>
                     <form method="GET">
                         <div class="row g-3 align-items-end">
@@ -161,9 +203,9 @@
                                 <label for="status" class="form-label">Estado</label>
                                 <select id="status" name="status" class="form-select">
                                     <option value="" @selected($status === '')>Todos</option>
-                                    <option value="paid" @selected($status === 'paid')>paid</option>
-                                    <option value="pending" @selected($status === 'pending')>pending</option>
-                                    <option value="cancelled" @selected($status === 'cancelled')>cancelled</option>
+                                    <option value="paid" @selected($status === 'paid')>Pagada</option>
+                                    <option value="pending" @selected($status === 'pending')>Pendiente</option>
+                                    <option value="cancelled" @selected($status === 'cancelled')>Cancelada</option>
                                 </select>
                             </div>
 
@@ -171,11 +213,11 @@
                                 <label for="channel" class="form-label">Canal</label>
                                 <select id="channel" name="channel" class="form-select">
                                     <option value="" @selected(($channel ?? '') === '')>Todos</option>
-                                    <option value="web" @selected(($channel ?? '') === 'web')>web</option>
-                                    <option value="api" @selected(($channel ?? '') === 'api')>api</option>
-                                    <option value="phone" @selected(($channel ?? '') === 'phone')>phone</option>
-                                    <option value="email" @selected(($channel ?? '') === 'email')>email</option>
-                                    <option value="whatsapp" @selected(($channel ?? '') === 'whatsapp')>whatsapp</option>
+                                    <option value="web" @selected(($channel ?? '') === 'web')>Web</option>
+                                    <option value="api" @selected(($channel ?? '') === 'api')>API</option>
+                                    <option value="phone" @selected(($channel ?? '') === 'phone')>Teléfono</option>
+                                    <option value="email" @selected(($channel ?? '') === 'email')>Correo</option>
+                                    <option value="whatsapp" @selected(($channel ?? '') === 'whatsapp')>WhatsApp</option>
                                 </select>
                             </div>
 
@@ -226,7 +268,8 @@
                             formatter: (cell) => {
                                 const v = String(cell || '');
                                 const cls = v === 'paid' ? 'text-bg-success' : (v === 'pending' ? 'text-bg-warning' : 'text-bg-danger');
-                                return gridjs.html(`<span class="badge ${cls}">${v}</span>`);
+                                const label = statusLabels[v] || v;
+                                return gridjs.html(`<span class="badge ${cls}">${label}</span>`);
                             }
                         },
                         {
@@ -238,7 +281,8 @@
                                 const icon = v === 'whatsapp'
                                     ? 'fa-brands fa-whatsapp'
                                     : (v === 'email' ? 'fa-regular fa-envelope' : (v === 'phone' ? 'fa-solid fa-phone' : (v === 'api' ? 'fa-solid fa-code' : 'fa-solid fa-globe')));
-                                return gridjs.html(`<span class="d-inline-flex align-items-center gap-2"><i class="${icon}"></i><span>${v}</span></span>`);
+                                const label = channelLabels[v] || v;
+                                return gridjs.html(`<span class="d-inline-flex align-items-center gap-2"><i class="${icon}"></i><span>${label}</span></span>`);
                             }
                         },
                         { name: 'Fecha', sort: true, width: '190px' },
@@ -263,6 +307,8 @@
                 const paidOrders = @json($chartPaidOrders);
                 const paidRevenue = @json($chartPaidRevenue);
                 const cop = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+                const statusLabels = { paid: 'Pagada', pending: 'Pendiente', cancelled: 'Cancelada' };
+                const channelLabels = { web: 'Web', api: 'API', phone: 'Teléfono', email: 'Correo', whatsapp: 'WhatsApp' };
 
                 const ctx = document.getElementById('chart');
                 new Chart(ctx, {

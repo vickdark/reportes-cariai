@@ -98,7 +98,7 @@ class SoporteReportController extends Controller
                 (string) $r->customer_name,
                 (string) $r->status,
                 (string) $r->channel,
-                $soldAt->toDateTimeString(),
+                $soldAt->format('Y-m-d h:i A'),
                 (int) ($r->items ?? 0),
                 (int) ($r->units ?? 0),
                 $totalPesos,
@@ -173,8 +173,20 @@ class SoporteReportController extends Controller
             ->get();
 
         $filename = 'reporte_ventas_'.$from->toDateString().'_a_'.$to->toDateString().'.csv';
+        $statusLabels = [
+            'paid' => 'Pagada',
+            'pending' => 'Pendiente',
+            'cancelled' => 'Cancelada',
+        ];
+        $channelLabels = [
+            'web' => 'Web',
+            'api' => 'API',
+            'phone' => 'Teléfono',
+            'email' => 'Correo',
+            'whatsapp' => 'WhatsApp',
+        ];
 
-        return response()->streamDownload(function () use ($sales) {
+        return response()->streamDownload(function () use ($sales, $statusLabels, $channelLabels) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
 
@@ -190,14 +202,14 @@ class SoporteReportController extends Controller
             ]);
 
             foreach ($sales as $r) {
-                $soldAt = Carbon::parse($r->sold_at)->toDateTimeString();
+                $soldAt = Carbon::parse($r->sold_at)->format('Y-m-d h:i A');
                 $totalPesos = (int) round(((int) $r->total_cents) / 100);
 
                 fputcsv($out, [
                     (int) $r->id,
                     (string) $r->customer_name,
-                    (string) $r->status,
-                    (string) $r->channel,
+                    (string) ($statusLabels[(string) $r->status] ?? (string) $r->status),
+                    (string) ($channelLabels[(string) $r->channel] ?? (string) $r->channel),
                     $soldAt,
                     (int) ($r->items ?? 0),
                     (int) ($r->units ?? 0),

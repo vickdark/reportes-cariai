@@ -32,8 +32,9 @@ class DatabaseSeeder extends Seeder
         $segments = ['SMB', 'Mid-Market', 'Enterprise'];
         $countries = ['CO', 'MX', 'CL', 'AR', 'PE'];
         for ($i = 0; $i < 40; $i++) {
+            $fullName = trim($faker->firstName().' '.$faker->lastName().' '.$faker->lastName());
             $customerRows[] = [
-                'name' => $faker->company(),
+                'name' => $fullName,
                 'email' => $faker->unique()->companyEmail(),
                 'segment' => $segments[array_rand($segments)],
                 'country' => $countries[array_rand($countries)],
