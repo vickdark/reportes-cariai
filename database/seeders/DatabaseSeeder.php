@@ -65,7 +65,7 @@ class DatabaseSeeder extends Seeder
 
         $channels = ['web', 'api', 'phone', 'email', 'whatsapp'];
 
-        for ($i = 0; $i < 260; $i++) {
+        for ($i = 0; $i < 1000; $i++) {
             $soldAt = $now->copy()->subDays(random_int(0, 29))->subMinutes(random_int(0, 1439));
             $statusRoll = random_int(1, 100);
             $status = match (true) {

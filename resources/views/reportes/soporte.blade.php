@@ -412,7 +412,20 @@
 
             <div class="card">
                 <div class="card-body">
-                    <h2 class="h6 mb-3">Detalle de ventas</h2>
+                    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
+                        <h2 class="h6 mb-0">Detalle de ventas</h2>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-body-secondary small">Filas:</span>
+                            <select id="pageSize" class="form-select form-select-sm" style="width: 110px;">
+                                <option value="15">15</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="500">500</option>
+                                <option value="1000">1000</option>
+                            </select>
+                        </div>
+                    </div>
                     <div id="grid"></div>
                 </div>
             </div>
@@ -420,71 +433,162 @@
 
         <script>
             window.addEventListener('DOMContentLoaded', () => {
-                const gridData = @json($rows);
-
-                new gridjs.Grid({
-                    columns: [
-                        { name: 'ID', sort: true, width: '80px' },
-                        {
-                            name: 'Cliente',
-                            sort: true,
-                            width: '260px',
-                            formatter: (cell) => {
-                                const v = String(cell || '');
-                                const safe = v.replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-                                return gridjs.html(`<div class="text-truncate" title="${safe}">${safe}</div>`);
-                            }
-                        },
-                        {
-                            name: 'Estado',
-                            sort: true,
-                            width: '120px',
-                            formatter: (cell) => {
-                                const v = String(cell || '');
-                                const cls = v === 'paid' ? 'text-bg-success' : (v === 'pending' ? 'text-bg-warning' : 'text-bg-danger');
-                                const label = statusLabels[v] || v;
-                                return gridjs.html(`<span class="badge ${cls}">${label}</span>`);
-                            }
-                        },
-                        {
-                            name: 'Canal',
-                            sort: true,
-                            width: '150px',
-                            formatter: (cell) => {
-                                const v = String(cell || '');
-                                const icon = v === 'whatsapp'
-                                    ? 'fa-brands fa-whatsapp'
-                                    : (v === 'email' ? 'fa-regular fa-envelope' : (v === 'phone' ? 'fa-solid fa-phone' : (v === 'api' ? 'fa-solid fa-code' : 'fa-solid fa-globe')));
-                                const label = channelLabels[v] || v;
-                                return gridjs.html(`<span class="d-inline-flex align-items-center gap-2"><i class="${icon}"></i><span>${label}</span></span>`);
-                            }
-                        },
-                        { name: 'Fecha', sort: true, width: '190px' },
-                        { name: 'Ítems', sort: true, width: '90px' },
-                        { name: 'Unidades', sort: true, width: '110px' },
-                        {
-                            name: 'Total',
-                            sort: true,
-                            width: '170px',
-                            formatter: (cell) => cop.format(Number(cell || 0)),
-                        }
-                    ],
-                    data: gridData,
-                    search: { enabled: true, placeholder: 'Buscar en la tabla…' },
-                    sort: true,
-                    pagination: { enabled: true, limit: 15, summary: true },
-                    fixedHeader: true,
-                    height: '520px'
-                }).render(document.getElementById('grid'));
-
-                const labels = @json($chartLabels);
-                const paidOrders = @json($chartPaidOrders);
-                const paidRevenue = @json($chartPaidRevenue);
                 const cop = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
                 const statusLabels = { paid: 'Pagada', pending: 'Pendiente', cancelled: 'Cancelada' };
                 const channelLabels = { web: 'Web', api: 'API', phone: 'Teléfono', email: 'Correo', whatsapp: 'WhatsApp' };
                 const mixCountryLabels = @json($mixCountryLabels ?? []);
                 const mixCountryRevenue = @json($mixCountryRevenue ?? []);
+                const baseParams = @json(request()->query());
+
+                const dataBaseUrl = new URL(@json(route('reportes.ventas.data')), window.location.origin);
+                const gridContainer = document.getElementById('grid');
+                const pageSizeSelect = document.getElementById('pageSize');
+
+                let currentSearch = '';
+                let currentSort = null;
+
+                const buildUrl = (extra) => {
+                    const u = new URL(dataBaseUrl.toString());
+                    const params = { ...baseParams, ...extra };
+
+                    Object.entries(params).forEach(([k, v]) => {
+                        if (v === null || v === undefined) return;
+                        if (typeof v === 'string' && v.trim() === '') return;
+                        u.searchParams.set(k, String(v));
+                    });
+
+                    return u.toString();
+                };
+
+                const renderGrid = (pageSize) => {
+                    gridContainer.innerHTML = '';
+                    currentSearch = '';
+                    currentSort = null;
+
+                    new gridjs.Grid({
+                        columns: [
+                            { name: 'ID', sort: true, width: '80px' },
+                            {
+                                name: 'Cliente',
+                                sort: true,
+                                width: '260px',
+                                formatter: (cell) => {
+                                    const v = String(cell || '');
+                                    const safe = v.replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+                                    return gridjs.html(`<div class="text-truncate" title="${safe}">${safe}</div>`);
+                                }
+                            },
+                            {
+                                name: 'Estado',
+                                sort: true,
+                                width: '120px',
+                                formatter: (cell) => {
+                                    const v = String(cell || '');
+                                    const cls = v === 'paid' ? 'text-bg-success' : (v === 'pending' ? 'text-bg-warning' : 'text-bg-danger');
+                                    const label = statusLabels[v] || v;
+                                    return gridjs.html(`<span class="badge ${cls}">${label}</span>`);
+                                }
+                            },
+                            {
+                                name: 'Canal',
+                                sort: true,
+                                width: '150px',
+                                formatter: (cell) => {
+                                    const v = String(cell || '');
+                                    const icon = v === 'whatsapp'
+                                        ? 'fa-brands fa-whatsapp'
+                                        : (v === 'email' ? 'fa-regular fa-envelope' : (v === 'phone' ? 'fa-solid fa-phone' : (v === 'api' ? 'fa-solid fa-code' : 'fa-solid fa-globe')));
+                                    const label = channelLabels[v] || v;
+                                    return gridjs.html(`<span class="d-inline-flex align-items-center gap-2"><i class="${icon}"></i><span>${label}</span></span>`);
+                                }
+                            },
+                            { name: 'Fecha', sort: true, width: '190px' },
+                            { name: 'Ítems', sort: true, width: '90px' },
+                            { name: 'Unidades', sort: true, width: '110px' },
+                            {
+                                name: 'Total',
+                                sort: true,
+                                width: '170px',
+                                formatter: (cell) => cop.format(Number(cell || 0)),
+                            }
+                        ],
+                        server: {
+                            url: buildUrl({ page: 1, limit: pageSize }),
+                            then: (res) => res.data,
+                            total: (res) => res.total,
+                        },
+                        search: {
+                            enabled: true,
+                            placeholder: 'Buscar en la tabla…',
+                            server: {
+                                url: (prev, keyword) => {
+                                    currentSearch = String(keyword || '');
+                                    const extra = { page: 1, limit: pageSize };
+                                    if (currentSort) {
+                                        extra.sort = currentSort.sort;
+                                        extra.dir = currentSort.dir;
+                                    }
+                                    if (currentSearch.trim() !== '') {
+                                        extra.search = currentSearch.trim();
+                                    }
+                                    return buildUrl(extra);
+                                }
+                            }
+                        },
+                        sort: {
+                            server: {
+                                url: (prev, columns) => {
+                                    const c = (columns || [])[0];
+                                    if (!c) {
+                                        currentSort = null;
+                                    } else {
+                                        currentSort = { sort: c.index, dir: c.direction === 1 ? 'asc' : 'desc' };
+                                    }
+
+                                    const extra = { page: 1, limit: pageSize };
+                                    if (currentSort) {
+                                        extra.sort = currentSort.sort;
+                                        extra.dir = currentSort.dir;
+                                    }
+                                    if (currentSearch.trim() !== '') {
+                                        extra.search = currentSearch.trim();
+                                    }
+                                    return buildUrl(extra);
+                                }
+                            }
+                        },
+                        pagination: {
+                            enabled: true,
+                            limit: pageSize,
+                            summary: true,
+                            server: {
+                                url: (prev, page, limit) => {
+                                    const extra = { page: page + 1, limit };
+                                    if (currentSort) {
+                                        extra.sort = currentSort.sort;
+                                        extra.dir = currentSort.dir;
+                                    }
+                                    if (currentSearch.trim() !== '') {
+                                        extra.search = currentSearch.trim();
+                                    }
+                                    return buildUrl(extra);
+                                }
+                            }
+                        },
+                        fixedHeader: true,
+                        height: '520px'
+                    }).render(gridContainer);
+                };
+
+                pageSizeSelect.addEventListener('change', () => {
+                    renderGrid(Number(pageSizeSelect.value) || 25);
+                });
+
+                renderGrid(Number(pageSizeSelect.value) || 25);
+
+                const labels = @json($chartLabels);
+                const paidOrders = @json($chartPaidOrders);
+                const paidRevenue = @json($chartPaidRevenue);
 
                 const ctx = document.getElementById('chart');
                 new Chart(ctx, {

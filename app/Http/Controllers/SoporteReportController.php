@@ -176,39 +176,7 @@ class SoporteReportController extends Controller
         $cancelRate = $total > 0 ? ($cancelled / $total) : 0.0;
         $cancelRateThreshold = 0.25;
         $cancelAlert = $total > 0 && $cancelRate >= $cancelRateThreshold;
-
-        $sales = (clone $base)
-            ->select([
-                'sales.id',
-                'sales.status',
-                'sales.channel',
-                'sales.sold_at',
-                'sales.total_cents',
-                DB::raw("coalesce(customers.name, 'Consumidor final') as customer_name"),
-                DB::raw('(select sum(quantity) from sale_items where sale_items.sale_id = sales.id) as units'),
-                DB::raw('(select count(*) from sale_items where sale_items.sale_id = sales.id) as items'),
-            ])
-            ->orderByDesc('sales.sold_at')
-            ->limit(500)
-            ->get();
-
-        $rows = $sales->map(function ($r) {
-            $soldAt = Carbon::parse($r->sold_at);
-            $totalCents = (int) $r->total_cents;
-            $totalPesos = (int) round($totalCents / 100);
-
-            return [
-                (int) $r->id,
-                (string) $r->customer_name,
-                (string) $r->status,
-                (string) $r->channel,
-                $soldAt->format('Y-m-d h:i A'),
-                (int) ($r->items ?? 0),
-                (int) ($r->units ?? 0),
-                $totalPesos,
-            ];
-        })->values();
-
+ 
         return view('reportes.soporte', [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
@@ -247,7 +215,157 @@ class SoporteReportController extends Controller
             'mixCountryRevenue' => $mixCountryRevenue,
             'topChannels' => $topChannels,
             'topCustomers' => $topCustomers,
-            'rows' => $rows,
+            'rows' => [],
+        ]);
+    }
+
+    public function data(Request $request)
+    {
+        $to = $this->parseDate($request->input('to')) ?? Carbon::today();
+        $from = $this->parseDate($request->input('from')) ?? $to->copy()->subDays(13);
+
+        if ($from->greaterThan($to)) {
+            [$from, $to] = [$to, $from];
+        }
+
+        $status = (string) $request->input('status', '');
+        $allowedStatus = ['paid', 'pending', 'cancelled'];
+
+        $channel = (string) $request->input('channel', '');
+        $allowedChannel = ['web', 'api', 'phone', 'email', 'whatsapp'];
+
+        $country = strtoupper((string) $request->input('country', ''));
+        $allowedCountry = ['CO', 'MX', 'CL', 'AR', 'PE'];
+
+        $segment = (string) $request->input('segment', '');
+        $allowedSegment = ['SMB', 'Mid-Market', 'Enterprise'];
+
+        $search = trim((string) $request->input('search', ''));
+        $page = max(1, (int) $request->input('page', 1));
+        $limit = max(1, min(1000, (int) $request->input('limit', 25)));
+
+        $sortIndex = $request->input('sort', null);
+        $dir = strtolower((string) $request->input('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $countBase = DB::table('sales')
+            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+            ->whereBetween('sales.sold_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()]);
+
+        if (in_array($status, $allowedStatus, true)) {
+            $countBase->where('sales.status', $status);
+        }
+
+        if (in_array($channel, $allowedChannel, true)) {
+            $countBase->where('sales.channel', $channel);
+        }
+
+        if (in_array($country, $allowedCountry, true)) {
+            $countBase->where('customers.country', $country);
+        }
+
+        if (in_array($segment, $allowedSegment, true)) {
+            $countBase->where('customers.segment', $segment);
+        }
+
+        if ($search !== '') {
+            $countBase->where(function ($q) use ($search) {
+                $like = '%'.$search.'%';
+                $q->orWhere('customers.name', 'like', $like)
+                    ->orWhere('sales.status', 'like', $like)
+                    ->orWhere('sales.channel', 'like', $like)
+                    ->orWhere('sales.id', 'like', $like);
+            });
+        }
+
+        $total = (int) $countBase->distinct('sales.id')->count('sales.id');
+
+        $dataBase = DB::table('sales')
+            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+            ->leftJoin('sale_items', 'sale_items.sale_id', '=', 'sales.id')
+            ->whereBetween('sales.sold_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->select([
+                'sales.id',
+                'sales.status',
+                'sales.channel',
+                'sales.sold_at',
+                'sales.total_cents',
+                'customers.name as customer_name_raw',
+            ])
+            ->selectRaw('count(sale_items.id) as items')
+            ->selectRaw('coalesce(sum(sale_items.quantity), 0) as units')
+            ->groupBy('sales.id', 'sales.status', 'sales.channel', 'sales.sold_at', 'sales.total_cents', 'customers.name');
+
+        if (in_array($status, $allowedStatus, true)) {
+            $dataBase->where('sales.status', $status);
+        }
+
+        if (in_array($channel, $allowedChannel, true)) {
+            $dataBase->where('sales.channel', $channel);
+        }
+
+        if (in_array($country, $allowedCountry, true)) {
+            $dataBase->where('customers.country', $country);
+        }
+
+        if (in_array($segment, $allowedSegment, true)) {
+            $dataBase->where('customers.segment', $segment);
+        }
+
+        if ($search !== '') {
+            $dataBase->where(function ($q) use ($search) {
+                $like = '%'.$search.'%';
+                $q->orWhere('customers.name', 'like', $like)
+                    ->orWhere('sales.status', 'like', $like)
+                    ->orWhere('sales.channel', 'like', $like)
+                    ->orWhere('sales.id', 'like', $like);
+            });
+        }
+
+        $sortMap = [
+            0 => 'sales.id',
+            1 => 'customers.name',
+            2 => 'sales.status',
+            3 => 'sales.channel',
+            4 => 'sales.sold_at',
+            5 => 'items',
+            6 => 'units',
+            7 => 'sales.total_cents',
+        ];
+
+        if (is_numeric($sortIndex) && array_key_exists((int) $sortIndex, $sortMap)) {
+            $col = $sortMap[(int) $sortIndex];
+            if ($col === 'items' || $col === 'units') {
+                $dataBase->orderByRaw($col.' '.$dir);
+            } else {
+                $dataBase->orderBy($col, $dir);
+            }
+        } else {
+            $dataBase->orderByDesc('sales.sold_at');
+        }
+
+        $offset = ($page - 1) * $limit;
+        $sales = $dataBase->offset($offset)->limit($limit)->get();
+
+        $rows = $sales->map(function ($r) {
+            $soldAt = Carbon::parse($r->sold_at)->format('Y-m-d h:i A');
+            $totalPesos = (int) round(((int) $r->total_cents) / 100);
+            $customerName = $r->customer_name_raw !== null && trim((string) $r->customer_name_raw) !== '' ? (string) $r->customer_name_raw : 'Consumidor final';
+
+            return [
+                (int) $r->id,
+                $customerName,
+                (string) $r->status,
+                (string) $r->channel,
+                $soldAt,
+                (int) $r->items,
+                (int) $r->units,
+                $totalPesos,
+            ];
+        })->values();
+
+        return response()->json([
+            'data' => $rows,
+            'total' => $total,
         ]);
     }
 
