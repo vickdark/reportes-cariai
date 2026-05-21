@@ -66,7 +66,7 @@ window.addEventListener('DOMContentLoaded', () => {
         currentSearch = '';
         currentSort = null;
 
-        new gridjs.Grid({
+        const grid = new gridjs.Grid({
             columns: [
                 { name: 'ID', sort: true, width: '80px' },
                 {
@@ -203,6 +203,42 @@ window.addEventListener('DOMContentLoaded', () => {
             fixedHeader: true,
             height: '520px'
         }).render(gridContainer);
+
+        // Agregar etiquetas a celdas para vista móvil
+        setTimeout(() => {
+            formatGridForMobile();
+        }, 100);
+    };
+
+    /**
+     * Formatear Grid para vista móvil
+     */
+    const formatGridForMobile = () => {
+        const columnLabels = ['ID', 'Cliente', 'Estado', 'Canal', 'Fecha', 'Ítems', 'Unidades', 'Total'];
+        const rows = document.querySelectorAll('.gridjs-tr');
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('.gridjs-td');
+            cells.forEach((cell, index) => {
+                if (!cell.hasAttribute('data-label')) {
+                    cell.setAttribute('data-label', columnLabels[index] || '');
+                }
+            });
+        });
+    };
+
+    // Observar cambios en la tabla para agregar etiquetas a nuevas filas
+    const observeGridChanges = () => {
+        const observer = new MutationObserver(() => {
+            formatGridForMobile();
+        });
+
+        if (gridContainer) {
+            observer.observe(gridContainer, {
+                childList: true,
+                subtree: true
+            });
+        }
     };
 
     // Controlador de cambio de tamaño de página
@@ -210,8 +246,9 @@ window.addEventListener('DOMContentLoaded', () => {
         renderGrid(Number(pageSizeSelect.value) || 25);
     });
 
-    // Initial render
+    // Renderizado inicial
     renderGrid(Number(pageSizeSelect.value) || 25);
+    observeGridChanges();
 
     // Inicialice los gráficos si hay datos disponibles.
     const labels = window.chartLabels || [];
