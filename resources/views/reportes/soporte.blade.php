@@ -51,6 +51,48 @@
                     'Mid-Market' => 'Mediana',
                     'Enterprise' => 'Enterprise',
                 ];
+
+                $formatMoney = fn (int $cents) => 'COP $ '.number_format((int) round($cents / 100), 0, ',', '.');
+
+                $deltaMeta = function (?float $pct): array {
+                    if ($pct === null) {
+                        return ['text' => 'N/A', 'cls' => 'text-body-secondary', 'icon' => null];
+                    }
+
+                    $text = ($pct >= 0 ? '+' : '').number_format($pct, 1, ',', '.').'%';
+                    $cls = $pct >= 0 ? 'text-success' : 'text-danger';
+                    $icon = $pct >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
+
+                    return ['text' => $text, 'cls' => $cls, 'icon' => $icon];
+                };
+
+                $statusLabel = $status !== '' ? ($statusLabels[$status] ?? $status) : null;
+                $channelLabel = ($channel ?? '') !== '' ? ($channelLabels[$channel] ?? $channel) : null;
+                $countryLabel = ($country ?? '') !== '' ? ($countryLabels[$country] ?? $country) : null;
+                $segmentLabel = ($segment ?? '') !== '' ? ($segmentLabels[$segment] ?? $segment) : null;
+
+                $paidRevenueCents = (int) ($kpis['paid_revenue_cents'] ?? 0);
+                $paidOrders = (int) ($kpis['paid_orders'] ?? 0);
+                $avgOrderCents = (int) ($kpis['avg_order_cents'] ?? 0);
+                $uniqueCustomers = (int) ($kpis['unique_customers'] ?? 0);
+
+                $paidRevenueDelta = $deltaMeta($kpis['paid_revenue_change_pct'] ?? null);
+                $paidOrdersDelta = $deltaMeta($kpis['paid_orders_change_pct'] ?? null);
+                $avgOrderDelta = $deltaMeta($kpis['avg_order_change_pct'] ?? null);
+                $uniqueCustomersDelta = $deltaMeta($kpis['unique_customers_change_pct'] ?? null);
+
+                $pendingOrders = (int) ($kpis['pending_orders'] ?? 0);
+                $cancelledOrders = (int) ($kpis['cancelled_orders'] ?? 0);
+
+                $pendingOld = (int) ($kpis['pending_old_count'] ?? 0);
+                $pendingDays = (int) ($kpis['pending_threshold_days'] ?? 0);
+                $cancelAlert = (bool) ($kpis['cancel_alert'] ?? false);
+                $cancelRate = (float) ($kpis['cancel_rate'] ?? 0);
+                $cancelRatePct = number_format($cancelRate * 100, 1, ',', '.');
+
+                $updatedAt = now()->setTimezone('America/Bogota');
+                $updatedMeridiem = $updatedAt->format('A') === 'AM' ? 'a. m.' : 'p. m.';
+                $updatedAtLabel = $updatedAt->format('d/m/Y h:i').' '.$updatedMeridiem.' (COT)';
             @endphp
 
             <div class="mb-4">
@@ -59,21 +101,21 @@
                         <h1 class="h3 mb-1">Reporte de Ventas LATAM</h1>
                         <div class="text-body-secondary">
                             Rango: <span class="fw-semibold">{{ $from }}</span> a <span class="fw-semibold">{{ $to }}</span>
-                            @if ($status !== '')
+                            @if ($statusLabel !== null)
                                 <span class="mx-1">·</span>
-                                Estado: <span class="fw-semibold">{{ $statusLabels[$status] ?? $status }}</span>
+                                Estado: <span class="fw-semibold">{{ $statusLabel }}</span>
                             @endif
-                            @if (($channel ?? '') !== '')
+                            @if ($channelLabel !== null)
                                 <span class="mx-1">·</span>
-                                Canal: <span class="fw-semibold">{{ $channelLabels[$channel] ?? $channel }}</span>
+                                Canal: <span class="fw-semibold">{{ $channelLabel }}</span>
                             @endif
-                            @if (($country ?? '') !== '')
+                            @if ($countryLabel !== null)
                                 <span class="mx-1">·</span>
-                                País: <span class="fw-semibold">{{ $countryLabels[$country] ?? $country }}</span>
+                                País: <span class="fw-semibold">{{ $countryLabel }}</span>
                             @endif
-                            @if (($segment ?? '') !== '')
+                            @if ($segmentLabel !== null)
                                 <span class="mx-1">·</span>
-                                Segmento: <span class="fw-semibold">{{ $segmentLabels[$segment] ?? $segment }}</span>
+                                Segmento: <span class="fw-semibold">{{ $segmentLabel }}</span>
                             @endif
                             <span class="mx-1">·</span>
                             Moneda: <span class="fw-semibold">COP</span>
@@ -81,11 +123,7 @@
                     </div>
 
                     <div class="text-body-secondary small">
-                        @php
-                            $updatedAt = now()->setTimezone('America/Bogota');
-                            $updatedMeridiem = $updatedAt->format('A') === 'AM' ? 'a. m.' : 'p. m.';
-                        @endphp
-                        Actualizado: <span class="fw-semibold">{{ $updatedAt->format('d/m/Y h:i') }} {{ $updatedMeridiem }} (COT)</span>
+                        Actualizado: <span class="fw-semibold">{{ $updatedAtLabel }}</span>
                     </div>
                 </div>
             </div>
@@ -117,17 +155,11 @@
                             <div>
                             <div class="text-body-secondary small">Ingresos pagados</div>
                             <div class="h4 mb-0">
-                                COP $ {{ number_format((int) round(($kpis['paid_revenue_cents'] ?? 0) / 100), 0, ',', '.') }}
+                                {{ $formatMoney($paidRevenueCents) }}
                             </div>
-                            @php
-                                $d = $kpis['paid_revenue_change_pct'] ?? null;
-                                $dText = $d === null ? 'N/A' : (($d >= 0 ? '+' : '').number_format($d, 1, ',', '.').'%');
-                                $dCls = $d === null ? 'text-body-secondary' : ($d >= 0 ? 'text-success' : 'text-danger');
-                                $dIcon = $d === null ? '' : ($d >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down');
-                            @endphp
-                            <div class="small {{ $dCls }}">
-                                @if ($dIcon !== '') <i class="fa-solid {{ $dIcon }} me-1"></i>@endif
-                                {{ $dText }} vs período anterior
+                            <div class="small {{ $paidRevenueDelta['cls'] }}">
+                                @if ($paidRevenueDelta['icon'] !== null) <i class="fa-solid {{ $paidRevenueDelta['icon'] }} me-1"></i>@endif
+                                {{ $paidRevenueDelta['text'] }} vs período anterior
                             </div>
                             </div>
                             <div class="text-success fs-3">
@@ -141,16 +173,10 @@
                         <div class="card-body d-flex align-items-start justify-content-between gap-3">
                             <div>
                             <div class="text-body-secondary small">Órdenes pagadas</div>
-                            <div class="h4 mb-0">{{ $kpis['paid_orders'] ?? 0 }}</div>
-                            @php
-                                $d = $kpis['paid_orders_change_pct'] ?? null;
-                                $dText = $d === null ? 'N/A' : (($d >= 0 ? '+' : '').number_format($d, 1, ',', '.').'%');
-                                $dCls = $d === null ? 'text-body-secondary' : ($d >= 0 ? 'text-success' : 'text-danger');
-                                $dIcon = $d === null ? '' : ($d >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down');
-                            @endphp
-                            <div class="small {{ $dCls }}">
-                                @if ($dIcon !== '') <i class="fa-solid {{ $dIcon }} me-1"></i>@endif
-                                {{ $dText }} vs período anterior
+                            <div class="h4 mb-0">{{ $paidOrders }}</div>
+                            <div class="small {{ $paidOrdersDelta['cls'] }}">
+                                @if ($paidOrdersDelta['icon'] !== null) <i class="fa-solid {{ $paidOrdersDelta['icon'] }} me-1"></i>@endif
+                                {{ $paidOrdersDelta['text'] }} vs período anterior
                             </div>
                             </div>
                             <div class="text-primary fs-3">
@@ -165,17 +191,11 @@
                             <div>
                             <div class="text-body-secondary small">Ticket promedio</div>
                             <div class="h4 mb-0">
-                                COP $ {{ number_format((int) round(($kpis['avg_order_cents'] ?? 0) / 100), 0, ',', '.') }}
+                                {{ $formatMoney($avgOrderCents) }}
                             </div>
-                            @php
-                                $d = $kpis['avg_order_change_pct'] ?? null;
-                                $dText = $d === null ? 'N/A' : (($d >= 0 ? '+' : '').number_format($d, 1, ',', '.').'%');
-                                $dCls = $d === null ? 'text-body-secondary' : ($d >= 0 ? 'text-success' : 'text-danger');
-                                $dIcon = $d === null ? '' : ($d >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down');
-                            @endphp
-                            <div class="small {{ $dCls }}">
-                                @if ($dIcon !== '') <i class="fa-solid {{ $dIcon }} me-1"></i>@endif
-                                {{ $dText }} vs período anterior
+                            <div class="small {{ $avgOrderDelta['cls'] }}">
+                                @if ($avgOrderDelta['icon'] !== null) <i class="fa-solid {{ $avgOrderDelta['icon'] }} me-1"></i>@endif
+                                {{ $avgOrderDelta['text'] }} vs período anterior
                             </div>
                             </div>
                             <div class="text-info fs-3">
@@ -189,16 +209,10 @@
                         <div class="card-body d-flex align-items-start justify-content-between gap-3">
                             <div>
                             <div class="text-body-secondary small">Clientes únicos</div>
-                            <div class="h4 mb-0">{{ $kpis['unique_customers'] ?? 0 }}</div>
-                            @php
-                                $d = $kpis['unique_customers_change_pct'] ?? null;
-                                $dText = $d === null ? 'N/A' : (($d >= 0 ? '+' : '').number_format($d, 1, ',', '.').'%');
-                                $dCls = $d === null ? 'text-body-secondary' : ($d >= 0 ? 'text-success' : 'text-danger');
-                                $dIcon = $d === null ? '' : ($d >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down');
-                            @endphp
-                            <div class="small {{ $dCls }}">
-                                @if ($dIcon !== '') <i class="fa-solid {{ $dIcon }} me-1"></i>@endif
-                                {{ $dText }} vs período anterior
+                            <div class="h4 mb-0">{{ $uniqueCustomers }}</div>
+                            <div class="small {{ $uniqueCustomersDelta['cls'] }}">
+                                @if ($uniqueCustomersDelta['icon'] !== null) <i class="fa-solid {{ $uniqueCustomersDelta['icon'] }} me-1"></i>@endif
+                                {{ $uniqueCustomersDelta['text'] }} vs período anterior
                             </div>
                             </div>
                             <div class="text-warning fs-3">
@@ -213,7 +227,7 @@
                         <div class="card-body d-flex align-items-start justify-content-between gap-3">
                             <div>
                             <div class="text-body-secondary small">Órdenes pendientes</div>
-                            <div class="h4 mb-1">{{ $kpis['pending_orders'] ?? 0 }}</div>
+                            <div class="h4 mb-1">{{ $pendingOrders }}</div>
                             <div class="text-body-secondary small">Requieren seguimiento</div>
                             </div>
                             <div class="text-secondary fs-3">
@@ -228,7 +242,7 @@
                         <div class="card-body d-flex align-items-start justify-content-between gap-3">
                             <div>
                             <div class="text-body-secondary small">Órdenes canceladas</div>
-                            <div class="h4 mb-1">{{ $kpis['cancelled_orders'] ?? 0 }}</div>
+                            <div class="h4 mb-1">{{ $cancelledOrders }}</div>
                             <div class="text-body-secondary small">Se excluyen de ingresos</div>
                             </div>
                             <div class="text-danger fs-3">
@@ -348,7 +362,7 @@
                                             <span class="text-body-secondary small">({{ (int) $r->orders }} órdenes)</span>
                                         </div>
                                         <div class="fw-semibold">
-                                            COP $ {{ number_format((int) round(((int) $r->revenue_cents) / 100), 0, ',', '.') }}
+                                            {{ $formatMoney((int) $r->revenue_cents) }}
                                         </div>
                                     </div>
                                 @empty
@@ -372,7 +386,7 @@
                                             <span class="text-body-secondary small">{{ (int) $r->orders }} órdenes</span>
                                         </div>
                                         <div class="fw-semibold">
-                                            COP $ {{ number_format((int) round(((int) $r->revenue_cents) / 100), 0, ',', '.') }}
+                                            {{ $formatMoney((int) $r->revenue_cents) }}
                                         </div>
                                     </div>
                                 @empty
@@ -388,14 +402,6 @@
                 <div class="card-body">
                     <h2 class="h6 mb-2">Alertas</h2>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        @php
-                            $pendingOld = (int) ($kpis['pending_old_count'] ?? 0);
-                            $pendingDays = (int) ($kpis['pending_threshold_days'] ?? 0);
-                            $cancelRate = (float) ($kpis['cancel_rate'] ?? 0);
-                            $cancelAlert = (bool) ($kpis['cancel_alert'] ?? false);
-                            $cancelRatePct = number_format($cancelRate * 100, 1, ',', '.');
-                        @endphp
-
                         <span class="badge {{ $pendingOld > 0 ? 'text-bg-danger' : 'text-bg-success' }}">
                             Pendientes &gt; {{ $pendingDays }} días: {{ $pendingOld }}
                         </span>
