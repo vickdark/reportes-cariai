@@ -37,6 +37,20 @@
                     'email' => 'Correo',
                     'whatsapp' => 'WhatsApp',
                 ];
+
+                $countryLabels = [
+                    'CO' => 'Colombia',
+                    'MX' => 'México',
+                    'CL' => 'Chile',
+                    'AR' => 'Argentina',
+                    'PE' => 'Perú',
+                ];
+
+                $segmentLabels = [
+                    'SMB' => 'Pyme',
+                    'Mid-Market' => 'Mediana',
+                    'Enterprise' => 'Enterprise',
+                ];
             @endphp
 
             <div class="mb-4">
@@ -52,6 +66,14 @@
                             @if (($channel ?? '') !== '')
                                 <span class="mx-1">·</span>
                                 Canal: <span class="fw-semibold">{{ $channelLabels[$channel] ?? $channel }}</span>
+                            @endif
+                            @if (($country ?? '') !== '')
+                                <span class="mx-1">·</span>
+                                País: <span class="fw-semibold">{{ $countryLabels[$country] ?? $country }}</span>
+                            @endif
+                            @if (($segment ?? '') !== '')
+                                <span class="mx-1">·</span>
+                                Segmento: <span class="fw-semibold">{{ $segmentLabels[$segment] ?? $segment }}</span>
                             @endif
                             <span class="mx-1">·</span>
                             Moneda: <span class="fw-semibold">COP</span>
@@ -80,6 +102,9 @@
                                 Consolida el desempeño de ventas por rango de fechas, mostrando ingresos, volumen de órdenes, ticket promedio y clientes únicos.
                                 Ayuda a detectar tendencias diarias, identificar canales con mayor conversión y priorizar seguimiento de órdenes pendientes.
                             </div>
+                            <div class="text-body-secondary small mt-2">
+                                Comparativo: vs período anterior ({{ $prevFrom }} a {{ $prevTo }})
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -94,6 +119,16 @@
                             <div class="h4 mb-0">
                                 COP $ {{ number_format((int) round(($kpis['paid_revenue_cents'] ?? 0) / 100), 0, ',', '.') }}
                             </div>
+                            @php
+                                $d = $kpis['paid_revenue_change_pct'] ?? null;
+                                $dText = $d === null ? 'N/A' : (($d >= 0 ? '+' : '').number_format($d, 1, ',', '.').'%');
+                                $dCls = $d === null ? 'text-body-secondary' : ($d >= 0 ? 'text-success' : 'text-danger');
+                                $dIcon = $d === null ? '' : ($d >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down');
+                            @endphp
+                            <div class="small {{ $dCls }}">
+                                @if ($dIcon !== '') <i class="fa-solid {{ $dIcon }} me-1"></i>@endif
+                                {{ $dText }} vs período anterior
+                            </div>
                             </div>
                             <div class="text-success fs-3">
                                 <i class="fa-solid fa-sack-dollar"></i>
@@ -107,6 +142,16 @@
                             <div>
                             <div class="text-body-secondary small">Órdenes pagadas</div>
                             <div class="h4 mb-0">{{ $kpis['paid_orders'] ?? 0 }}</div>
+                            @php
+                                $d = $kpis['paid_orders_change_pct'] ?? null;
+                                $dText = $d === null ? 'N/A' : (($d >= 0 ? '+' : '').number_format($d, 1, ',', '.').'%');
+                                $dCls = $d === null ? 'text-body-secondary' : ($d >= 0 ? 'text-success' : 'text-danger');
+                                $dIcon = $d === null ? '' : ($d >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down');
+                            @endphp
+                            <div class="small {{ $dCls }}">
+                                @if ($dIcon !== '') <i class="fa-solid {{ $dIcon }} me-1"></i>@endif
+                                {{ $dText }} vs período anterior
+                            </div>
                             </div>
                             <div class="text-primary fs-3">
                                 <i class="fa-solid fa-receipt"></i>
@@ -122,6 +167,16 @@
                             <div class="h4 mb-0">
                                 COP $ {{ number_format((int) round(($kpis['avg_order_cents'] ?? 0) / 100), 0, ',', '.') }}
                             </div>
+                            @php
+                                $d = $kpis['avg_order_change_pct'] ?? null;
+                                $dText = $d === null ? 'N/A' : (($d >= 0 ? '+' : '').number_format($d, 1, ',', '.').'%');
+                                $dCls = $d === null ? 'text-body-secondary' : ($d >= 0 ? 'text-success' : 'text-danger');
+                                $dIcon = $d === null ? '' : ($d >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down');
+                            @endphp
+                            <div class="small {{ $dCls }}">
+                                @if ($dIcon !== '') <i class="fa-solid {{ $dIcon }} me-1"></i>@endif
+                                {{ $dText }} vs período anterior
+                            </div>
                             </div>
                             <div class="text-info fs-3">
                                 <i class="fa-solid fa-chart-simple"></i>
@@ -135,6 +190,16 @@
                             <div>
                             <div class="text-body-secondary small">Clientes únicos</div>
                             <div class="h4 mb-0">{{ $kpis['unique_customers'] ?? 0 }}</div>
+                            @php
+                                $d = $kpis['unique_customers_change_pct'] ?? null;
+                                $dText = $d === null ? 'N/A' : (($d >= 0 ? '+' : '').number_format($d, 1, ',', '.').'%');
+                                $dCls = $d === null ? 'text-body-secondary' : ($d >= 0 ? 'text-success' : 'text-danger');
+                                $dIcon = $d === null ? '' : ($d >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down');
+                            @endphp
+                            <div class="small {{ $dCls }}">
+                                @if ($dIcon !== '') <i class="fa-solid {{ $dIcon }} me-1"></i>@endif
+                                {{ $dText }} vs período anterior
+                            </div>
                             </div>
                             <div class="text-warning fs-3">
                                 <i class="fa-solid fa-users"></i>
@@ -188,18 +253,18 @@
                         </div>
                     </div>
                     <form method="GET">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-12 col-md-3">
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-3">
                                 <label for="from" class="form-label">Desde</label>
                                 <input id="from" name="from" type="date" value="{{ $from }}" class="form-control">
                             </div>
 
-                            <div class="col-12 col-md-3">
+                            <div class="col-12 col-lg-3">
                                 <label for="to" class="form-label">Hasta</label>
                                 <input id="to" name="to" type="date" value="{{ $to }}" class="form-control">
                             </div>
 
-                            <div class="col-12 col-md-2">
+                            <div class="col-12 col-md-6 col-lg-2">
                                 <label for="status" class="form-label">Estado</label>
                                 <select id="status" name="status" class="form-select">
                                     <option value="" @selected($status === '')>Todos</option>
@@ -209,7 +274,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-12 col-md-2">
+                            <div class="col-12 col-md-6 col-lg-2">
                                 <label for="channel" class="form-label">Canal</label>
                                 <select id="channel" name="channel" class="form-select">
                                     <option value="" @selected(($channel ?? '') === '')>Todos</option>
@@ -221,9 +286,32 @@
                                 </select>
                             </div>
 
-                            <div class="col-12 col-md-2">
-                                <button type="submit" class="btn btn-dark w-100">Aplicar</button>
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label for="country" class="form-label">País</label>
+                                <select id="country" name="country" class="form-select">
+                                    <option value="" @selected(($country ?? '') === '')>Todos</option>
+                                    <option value="CO" @selected(($country ?? '') === 'CO')>Colombia</option>
+                                    <option value="MX" @selected(($country ?? '') === 'MX')>México</option>
+                                    <option value="CL" @selected(($country ?? '') === 'CL')>Chile</option>
+                                    <option value="AR" @selected(($country ?? '') === 'AR')>Argentina</option>
+                                    <option value="PE" @selected(($country ?? '') === 'PE')>Perú</option>
+                                </select>
                             </div>
+
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label for="segment" class="form-label">Segmento</label>
+                                <select id="segment" name="segment" class="form-select">
+                                    <option value="" @selected(($segment ?? '') === '')>Todos</option>
+                                    <option value="SMB" @selected(($segment ?? '') === 'SMB')>Pyme</option>
+                                    <option value="Mid-Market" @selected(($segment ?? '') === 'Mid-Market')>Mediana</option>
+                                    <option value="Enterprise" @selected(($segment ?? '') === 'Enterprise')>Enterprise</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="submit" class="btn btn-dark">
+                                <i class="fa-solid fa-filter me-1"></i>Aplicar filtros
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -233,6 +321,92 @@
                 <div class="card-body">
                     <h2 class="h6 mb-3">Ingresos y órdenes por día</h2>
                     <canvas id="chart" height="90"></canvas>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <h2 class="h6 mb-2">Mix por país</h2>
+                            <div class="text-body-secondary small mb-3">Distribución de ingresos pagados (COP)</div>
+                            <canvas id="countryMixChart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <h2 class="h6 mb-2">Top 5 canales</h2>
+                            <div class="text-body-secondary small mb-3">Por ingresos pagados (COP)</div>
+                            <div class="list-group list-group-flush">
+                                @forelse (($topChannels ?? []) as $r)
+                                    <div class="list-group-item px-0 d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-semibold">{{ $channelLabels[$r->channel] ?? $r->channel }}</span>
+                                            <span class="text-body-secondary small">({{ (int) $r->orders }} órdenes)</span>
+                                        </div>
+                                        <div class="fw-semibold">
+                                            COP $ {{ number_format((int) round(((int) $r->revenue_cents) / 100), 0, ',', '.') }}
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="text-body-secondary">Sin datos.</div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <h2 class="h6 mb-2">Top 5 clientes</h2>
+                            <div class="text-body-secondary small mb-3">Por ingresos pagados (COP)</div>
+                            <div class="list-group list-group-flush">
+                                @forelse (($topCustomers ?? []) as $r)
+                                    <div class="list-group-item px-0 d-flex align-items-center justify-content-between">
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-semibold">{{ $r->customer_name }}</span>
+                                            <span class="text-body-secondary small">{{ (int) $r->orders }} órdenes</span>
+                                        </div>
+                                        <div class="fw-semibold">
+                                            COP $ {{ number_format((int) round(((int) $r->revenue_cents) / 100), 0, ',', '.') }}
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="text-body-secondary">Sin datos.</div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h6 mb-2">Alertas</h2>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        @php
+                            $pendingOld = (int) ($kpis['pending_old_count'] ?? 0);
+                            $pendingDays = (int) ($kpis['pending_threshold_days'] ?? 0);
+                            $cancelRate = (float) ($kpis['cancel_rate'] ?? 0);
+                            $cancelAlert = (bool) ($kpis['cancel_alert'] ?? false);
+                            $cancelRatePct = number_format($cancelRate * 100, 1, ',', '.');
+                        @endphp
+
+                        <span class="badge {{ $pendingOld > 0 ? 'text-bg-danger' : 'text-bg-success' }}">
+                            Pendientes &gt; {{ $pendingDays }} días: {{ $pendingOld }}
+                        </span>
+
+                        <span class="badge {{ $cancelAlert ? 'text-bg-danger' : 'text-bg-success' }}">
+                            Tasa de cancelación: {{ $cancelRatePct }}%
+                        </span>
+                    </div>
+                    <div class="text-body-secondary small mt-2">
+                        Las alertas se calculan con los filtros actuales y el rango seleccionado.
+                    </div>
                 </div>
             </div>
 
@@ -309,6 +483,8 @@
                 const cop = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
                 const statusLabels = { paid: 'Pagada', pending: 'Pendiente', cancelled: 'Cancelada' };
                 const channelLabels = { web: 'Web', api: 'API', phone: 'Teléfono', email: 'Correo', whatsapp: 'WhatsApp' };
+                const mixCountryLabels = @json($mixCountryLabels ?? []);
+                const mixCountryRevenue = @json($mixCountryRevenue ?? []);
 
                 const ctx = document.getElementById('chart');
                 new Chart(ctx, {
@@ -326,6 +502,31 @@
                         scales: {
                             y: { beginAtZero: true, ticks: { callback: (v) => cop.format(v) } },
                             y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 } }
+                        }
+                    }
+                });
+
+                const mixCtx = document.getElementById('countryMixChart');
+                new Chart(mixCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: mixCountryLabels,
+                        datasets: [
+                            {
+                                label: 'Ingresos (COP)',
+                                data: mixCountryRevenue,
+                                borderWidth: 1,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => `${ctx.label}: ${cop.format(ctx.parsed)}`
+                                }
+                            }
                         }
                     }
                 });
