@@ -24,18 +24,19 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]));
 
-        $faker = \Faker\Factory::create('es_MX');
+        $faker = \Faker\Factory::create('es_CO');
 
         $now = Carbon::now();
 
         $customerRows = [];
         $segments = ['SMB', 'Mid-Market', 'Enterprise'];
+        $countries = ['CO', 'MX', 'CL', 'AR', 'PE'];
         for ($i = 0; $i < 40; $i++) {
             $customerRows[] = [
                 'name' => $faker->company(),
                 'email' => $faker->unique()->companyEmail(),
                 'segment' => $segments[array_rand($segments)],
-                'country' => 'MX',
+                'country' => $countries[array_rand($countries)],
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -44,9 +45,9 @@ class DatabaseSeeder extends Seeder
         $customerIds = DB::table('customers')->pluck('id')->all();
 
         $productRows = [];
-        $categories = ['Software', 'Servicios', 'Add-ons', 'Soporte', 'Capacitación'];
+        $categories = ['Suscripción', 'Servicios', 'Add-ons', 'Soporte', 'Capacitación'];
         for ($i = 0; $i < 28; $i++) {
-            $priceCents = random_int(9900, 199900);
+            $priceCents = random_int(990000, 19990000);
             $productRows[] = [
                 'sku' => $faker->unique()->bothify('SKU-??-#####'),
                 'name' => ucfirst($faker->words(random_int(2, 4), true)),
@@ -61,7 +62,7 @@ class DatabaseSeeder extends Seeder
         $productIds = DB::table('products')->pluck('id')->all();
         $productPrices = DB::table('products')->pluck('price_cents', 'id')->all();
 
-        $channels = ['web', 'api', 'phone', 'email'];
+        $channels = ['web', 'api', 'phone', 'email', 'whatsapp'];
 
         for ($i = 0; $i < 260; $i++) {
             $soldAt = $now->copy()->subDays(random_int(0, 29))->subMinutes(random_int(0, 1439));
@@ -99,7 +100,7 @@ class DatabaseSeeder extends Seeder
                 ];
             }
 
-            $taxCents = $status === 'paid' ? (int) round($subtotalCents * 0.16) : 0;
+            $taxCents = $status === 'paid' ? (int) round($subtotalCents * 0.19) : 0;
             $totalCents = $status === 'paid' ? ($subtotalCents + $taxCents) : 0;
 
             $saleId = DB::table('sales')->insertGetId([
@@ -110,7 +111,7 @@ class DatabaseSeeder extends Seeder
                 'subtotal_cents' => $subtotalCents,
                 'tax_cents' => $taxCents,
                 'total_cents' => $totalCents,
-                'currency' => 'MXN',
+                'currency' => 'COP',
                 'created_at' => $soldAt,
                 'updated_at' => $soldAt,
             ]);

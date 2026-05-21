@@ -21,7 +21,7 @@ class SoporteReportController extends Controller
         $allowedStatus = ['paid', 'pending', 'cancelled'];
 
         $channel = (string) $request->input('channel', '');
-        $allowedChannel = ['web', 'api', 'phone', 'email'];
+        $allowedChannel = ['web', 'api', 'phone', 'email', 'whatsapp'];
 
         $base = DB::table('sales')
             ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
@@ -71,7 +71,7 @@ class SoporteReportController extends Controller
 
         $chartLabels = $series->pluck('day')->values();
         $chartPaidOrders = $series->pluck('paid_orders')->map(fn ($v) => (int) $v)->values();
-        $chartPaidRevenue = $series->pluck('paid_revenue_cents')->map(fn ($v) => (float) ((int) $v / 100))->values();
+        $chartPaidRevenue = $series->pluck('paid_revenue_cents')->map(fn ($v) => (int) round(((int) $v) / 100))->values();
 
         $sales = (clone $base)
             ->select([
@@ -91,7 +91,7 @@ class SoporteReportController extends Controller
         $rows = $sales->map(function ($r) {
             $soldAt = Carbon::parse($r->sold_at);
             $totalCents = (int) $r->total_cents;
-            $total = number_format($totalCents / 100, 2, '.', ',');
+            $totalPesos = (int) round($totalCents / 100);
 
             return [
                 (int) $r->id,
@@ -101,7 +101,7 @@ class SoporteReportController extends Controller
                 $soldAt->toDateTimeString(),
                 (int) ($r->items ?? 0),
                 (int) ($r->units ?? 0),
-                'MXN '.$total,
+                $totalPesos,
             ];
         })->values();
 
@@ -123,6 +123,91 @@ class SoporteReportController extends Controller
             'chartPaidOrders' => $chartPaidOrders,
             'chartPaidRevenue' => $chartPaidRevenue,
             'rows' => $rows,
+        ]);
+    }
+
+    public function export(Request $request)
+    {
+        $to = $this->parseDate($request->input('to')) ?? Carbon::today();
+        $from = $this->parseDate($request->input('from')) ?? $to->copy()->subDays(13);
+
+        if ($from->greaterThan($to)) {
+            [$from, $to] = [$to, $from];
+        }
+
+        $status = (string) $request->input('status', '');
+        $allowedStatus = ['paid', 'pending', 'cancelled'];
+
+        $channel = (string) $request->input('channel', '');
+        $allowedChannel = ['web', 'api', 'phone', 'email', 'whatsapp'];
+
+        $base = DB::table('sales')
+            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+            ->whereBetween('sales.sold_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()]);
+
+        if (in_array($status, $allowedStatus, true)) {
+            $base->where('sales.status', $status);
+        } else {
+            $status = '';
+        }
+
+        if (in_array($channel, $allowedChannel, true)) {
+            $base->where('sales.channel', $channel);
+        } else {
+            $channel = '';
+        }
+
+        $sales = (clone $base)
+            ->select([
+                'sales.id',
+                'sales.status',
+                'sales.channel',
+                'sales.sold_at',
+                'sales.total_cents',
+                DB::raw("coalesce(customers.name, 'Consumidor final') as customer_name"),
+                DB::raw('(select sum(quantity) from sale_items where sale_items.sale_id = sales.id) as units'),
+                DB::raw('(select count(*) from sale_items where sale_items.sale_id = sales.id) as items'),
+            ])
+            ->orderByDesc('sales.sold_at')
+            ->limit(5000)
+            ->get();
+
+        $filename = 'reporte_ventas_'.$from->toDateString().'_a_'.$to->toDateString().'.csv';
+
+        return response()->streamDownload(function () use ($sales) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+
+            fputcsv($out, [
+                'ID',
+                'Cliente',
+                'Estado',
+                'Canal',
+                'Fecha',
+                'Ítems',
+                'Unidades',
+                'Total (COP)',
+            ]);
+
+            foreach ($sales as $r) {
+                $soldAt = Carbon::parse($r->sold_at)->toDateTimeString();
+                $totalPesos = (int) round(((int) $r->total_cents) / 100);
+
+                fputcsv($out, [
+                    (int) $r->id,
+                    (string) $r->customer_name,
+                    (string) $r->status,
+                    (string) $r->channel,
+                    $soldAt,
+                    (int) ($r->items ?? 0),
+                    (int) ($r->units ?? 0),
+                    $totalPesos,
+                ]);
+            }
+
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
 
