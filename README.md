@@ -20,7 +20,11 @@ Reportes Cariai es una aplicación web basada en Laravel diseñada para proporci
 
 - **Framework**: [Laravel 12](https://laravel.com)
 - **Lenguaje**: PHP 8.2+
-- **Frontend**: [Tailwind CSS v4](https://tailwindcss.com/) y [Vite](https://vitejs.dev/)
+- **Frontend**: 
+  - [Bootstrap](https://getbootstrap.com/) (Diseño e Interfaz)
+  - [Chart.js](https://www.chartjs.org/) (Gráficos interactivos)
+  - [Grid.js](https://gridjs.io/) (Tablas de datos)
+  - [Vite](https://vitejs.dev/) (Empaquetador de assets)
 - **Base de Datos**: MySQL
 
 ---
