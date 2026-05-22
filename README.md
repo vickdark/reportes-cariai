@@ -94,7 +94,7 @@ Con Herd corriendo, ejecuta los siguientes comandos en tu terminal dentro de la 
 
 ### 6. Instalar dependencias de Frontend y Compilar
 
-Ahora necesitamos preparar los estilos (Tailwind CSS) y el JavaScript:
+Ahora necesitamos preparar los estilos CSS y el JavaScript:
 
 ```bash
 npm install
