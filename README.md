@@ -1,59 +1,125 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Reportes Cariai
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Reportes Cariai es una aplicación web basada en Laravel diseñada para proporcionar reportes completos y análisis de ventas. Ofrece un panel de control (dashboard) para monitorear los Indicadores Clave de Rendimiento (KPIs) y hacer seguimiento del rendimiento de ventas a través de diferentes canales, países y segmentos de clientes.
 
-## About Laravel
+## Características
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Dashboard de Ventas**: Visualiza KPIs críticos incluyendo Total de Órdenes, Órdenes Pagadas, Órdenes Pendientes, Ingresos Totales, Valor Promedio de Orden y Clientes Únicos.
+- **Comparativa de Períodos**: Compara automáticamente las métricas actuales con períodos anteriores para mostrar el porcentaje de crecimiento o decrecimiento.
+- **Filtros Avanzados**: Filtra los datos de ventas por:
+  - Rangos de fechas
+  - Estado (Pagada, Pendiente, Cancelada)
+  - Canal de Venta (Web, API, Teléfono, Correo, WhatsApp)
+  - País (Colombia, México, Chile, Argentina, Perú)
+  - Segmento de Cliente (Pyme, Mediana, Enterprise)
+- **Exportación de Datos**: Exporta los reportes de ventas filtrados a formato CSV para un análisis más profundo.
+- **Tabla de Datos Detallada**: Explora registros de ventas individuales con paginación, ordenamiento y búsqueda.
+- **Alertas**: Alertas integradas para métricas importantes, como altas tasas de cancelación o alertas de órdenes antiguas aún pendientes.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Tecnologías
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Framework**: [Laravel 12](https://laravel.com)
+- **Lenguaje**: PHP 8.2+
+- **Frontend**: [Tailwind CSS v4](https://tailwindcss.com/) y [Vite](https://vitejs.dev/)
+- **Base de Datos**: MySQL
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 🚀 Guía Paso a Paso: Ejecución en Local (Windows)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Esta guía asume que estás usando **Windows** y te recomienda usar **Laravel Herd** para tener el entorno de PHP listo de forma rápida, además de **MySQL** para la base de datos.
 
-## Laravel Sponsors
+### 1. ¿Qué debes tener a la mano?
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Antes de empezar, asegúrate de tener instalado lo siguiente en tu máquina Windows:
 
-### Premium Partners
+1. **[Laravel Herd para Windows](https://herd.laravel.com/windows)**: Esto instalará automáticamente PHP, Composer y configurará un entorno de desarrollo local sin complicaciones.
+2. **[Node.js](https://nodejs.org/es/)**: Necesario para compilar los recursos del frontend (JavaScript y CSS). Descarga la versión LTS.
+3. **[Git](https://git-scm.com/download/win)**: Para poder clonar el repositorio.
+4. **MySQL**: Puedes instalarlo a través de herramientas como [DBngin](https://dbngin.com/) (si estuviera disponible), [XAMPP](https://www.apachefriends.org/es/index.html), [MySQL Installer oficial](https://dev.mysql.com/downloads/installer/), o usar un cliente de bases de datos como [HeidiSQL](https://www.heidisql.com/) o [TablePlus](https://tableplus.com/) para gestionar tus bases de datos.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 2. Clonar el repositorio
 
-## Contributing
+Abre tu terminal (por ejemplo, PowerShell o la terminal de Herd) y navega a la carpeta de Herd donde guardarás tus proyectos (usualmente `C:\Users\TuUsuario\Herd`).
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+git clone <URL_DEL_REPOSITORIO> reportes-cariai
+cd reportes-cariai
+```
 
-## Code of Conduct
+### 3. Crear la Base de Datos MySQL
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Abre tu gestor de base de datos MySQL favorito (HeidiSQL, DBeaver, phpMyAdmin, etc.) y crea una base de datos vacía. Por ejemplo, nómbrala: `reportes_cariai`.
 
-## Security Vulnerabilities
+### 4. Configurar el entorno (.env)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Copia el archivo de configuración de ejemplo para crear el tuyo propio:
 
-## License
+```bash
+cp .env.example .env
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Abre el archivo `.env` en tu editor de código (como VS Code) y actualiza la sección de base de datos para que apunte a tu MySQL local:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=reportes_cariai
+DB_USERNAME=root       # Tu usuario de MySQL
+DB_PASSWORD=           # Tu contraseña de MySQL (déjalo vacío si no tiene)
+```
+
+### 5. Instalar dependencias y preparar la base de datos
+
+Con Herd corriendo, ejecuta los siguientes comandos en tu terminal dentro de la carpeta del proyecto:
+
+1. **Instalar dependencias de PHP:**
+   ```bash
+   composer install
+   ```
+2. **Generar la clave de la aplicación:**
+   ```bash
+   php artisan key:generate
+   ```
+3. **Ejecutar las migraciones:**
+   Esto creará todas las tablas necesarias en tu base de datos MySQL.
+   ```bash
+   php artisan migrate
+   ```
+
+### 6. Instalar dependencias de Frontend y Compilar
+
+Ahora necesitamos preparar los estilos (Tailwind CSS) y el JavaScript:
+
+```bash
+npm install
+npm run build
+```
+
+### 7. ¡Ver el proyecto en el navegador!
+
+Si estás usando **Laravel Herd**, el proyecto debería estar automáticamente disponible en tu navegador en:
+
+👉 **[http://reportes-cariai.test](http://reportes-cariai.test)**
+
+*(Nota: Herd mapea automáticamente las carpetas en tu directorio de Herd a dominios `.test`)*.
+
+Si por alguna razón necesitas correr el servidor manualmente, puedes ejecutar:
+
+```bash
+composer dev
+```
+*(Este comando iniciará el servidor de Laravel, la cola de trabajos y el servidor de desarrollo de Vite al mismo tiempo).*
+
+---
+
+## Estructura Principal del Proyecto
+
+- **Controladores**: La lógica principal de los reportes se encuentra en `App\Http\Controllers\SoporteReportController`.
+- **Rutas**: Las rutas web están definidas en `routes/web.php`, principalmente mapeadas bajo `/reportes/ventas`.
+- **Base de Datos**: Las migraciones estructuran tablas como `customers`, `products`, `sales`, y `sale_items`.
+
+## Licencia
+
+Este proyecto es software de código abierto bajo la [licencia MIT](https://opensource.org/licenses/MIT).
